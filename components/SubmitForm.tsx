@@ -63,9 +63,9 @@ export default function SubmitForm({ onSuccess }: Props) {
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
       <div className="w-full max-w-sm space-y-6 text-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">¿Necesitás capa hoy?</h1>
+          <h1 className="text-2xl font-bold text-gray-900">¿Está lloviendo ahora?</h1>
           <p className="mt-2 text-sm text-gray-500">
-            Reportá el clima en tu ubicación actual para ver el mapa de la comunidad.
+            Contanos si donde estás ahora, está lloviendo.
           </p>
         </div>
 
