@@ -1,6 +1,7 @@
 'use client'
 
 import 'leaflet/dist/leaflet.css'
+import { Fragment, useState, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { Report, Condition } from '../lib/reports'
@@ -25,6 +26,7 @@ type Props = {
   userLocation: { lat: number; lng: number } | null
   stale: boolean
   loading: boolean
+  lastFetchTime: number
   onRefresh: () => void
 }
 
@@ -38,8 +40,34 @@ function createEmojiIcon(emoji: string) {
   })
 }
 
-export default function LeafletMap({ reports, fallbackPin, userLocation, stale, loading, onRefresh }: Props) {
+export default function LeafletMap({ reports, fallbackPin, userLocation, stale, loading, lastFetchTime, onRefresh }: Props) {
   const mapCenter: [number, number] = userLocation ? [userLocation.lat, userLocation.lng] : DEFAULT_CENTER
+
+  const [minutesSince, setMinutesSince] = useState(0)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!lastFetchTime) return
+    const update = () => setMinutesSince(Math.floor((Date.now() - lastFetchTime) / 60000))
+    update()
+    const id = setInterval(update, 30000)
+    return () => clearInterval(id)
+  }, [lastFetchTime])
+
+  async function handleShare() {
+    const url = window.location.href
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: '¿Necesitás capa?', url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
+    } catch {
+      // user cancelled share dialog
+    }
+  }
 
   return (
     <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
@@ -49,10 +77,15 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
       />
 
       {/* Top-right controls */}
-      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 1000, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 1000, display: 'flex', alignItems: 'flex-end', flexDirection: 'column', gap: 6 }}>
         {!stale && !loading && (
-          <div style={{ backgroundColor: '#22c55e', color: 'white', fontSize: 12, padding: '2px 8px', borderRadius: 999 }}>
-            En vivo
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 11, color: '#6b7280', backgroundColor: 'white', padding: '2px 6px', borderRadius: 999, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+              {minutesSince === 0 ? 'justo ahora' : `hace ${minutesSince} min`}
+            </div>
+            <div style={{ backgroundColor: '#22c55e', color: 'white', fontSize: 12, padding: '2px 8px', borderRadius: 999 }}>
+              En vivo
+            </div>
           </div>
         )}
         <button
@@ -74,6 +107,31 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
           ↻ Refrescar
         </button>
       </div>
+
+      {/* Share button — bottom right */}
+      <button
+        onClick={handleShare}
+        style={{
+          position: 'absolute',
+          bottom: 40,
+          right: 16,
+          zIndex: 1000,
+          backgroundColor: 'white',
+          border: 'none',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          color: '#1d4ed8',
+          fontSize: 13,
+          fontWeight: 600,
+          padding: '8px 14px',
+          borderRadius: 999,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        {copied ? '✓ Copiado' : '↑ Compartir'}
+      </button>
 
       {/* Legend */}
       <div
@@ -99,9 +157,9 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
 
       {/* Community reports */}
       {reports.map((r) => {
-        const time = new Date(r.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        const time = new Date(r.created_at).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
         return (
-          <div key={r.id}>
+          <Fragment key={r.id}>
             <CircleMarker
               center={[r.lat, r.lng]}
               radius={40}
@@ -110,13 +168,13 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
               <Tooltip>{time}</Tooltip>
             </CircleMarker>
             <Marker position={[r.lat, r.lng]} icon={createEmojiIcon(EMOJIS[r.condition])} />
-          </div>
+          </Fragment>
         )
       })}
 
       {/* Fallback pin */}
       {fallbackPin && (
-        <div>
+        <Fragment>
           <CircleMarker
             center={[fallbackPin.lat, fallbackPin.lng]}
             radius={40}
@@ -125,7 +183,7 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
             <Tooltip permanent>Pronóstico</Tooltip>
           </CircleMarker>
           <Marker position={[fallbackPin.lat, fallbackPin.lng]} icon={createEmojiIcon(EMOJIS[fallbackPin.condition])} />
-        </div>
+        </Fragment>
       )}
 
       {/* User location marker (rendered last so it's on top) */}

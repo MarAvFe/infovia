@@ -1,5 +1,5 @@
-const KEY = 'raincheck_last_report'
-const STALE_MS = 10 * 60 * 1000
+const KEY = 'baldazo_last_report'
+export const STALE_MS = 10 * 60 * 1000
 
 export function hasRecentReport(): boolean {
   const ts = localStorage.getItem(KEY)

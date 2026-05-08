@@ -5,11 +5,11 @@ import dynamic from 'next/dynamic'
 import { fetchActiveReports, Report } from '../lib/reports'
 import { fetchFallbackCondition } from '../lib/openmeteo'
 import { Condition } from '../lib/weathercode'
+import { STALE_MS } from '../lib/gate'
 
 const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false })
 
 const MAP_CENTER = { lat: 9.9281, lng: -84.0907 }
-const STALE_MS = 10 * 60 * 1000
 
 type FallbackPin = { lat: number; lng: number; condition: Condition }
 
@@ -18,28 +18,31 @@ export default function MapView() {
   const [fallbackPin, setFallbackPin] = useState<FallbackPin | null>(null)
   const [loading, setLoading] = useState(true)
   const [stale, setStale] = useState(false)
+  const [fetchError, setFetchError] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const lastFetchRef = useRef<number>(0)
+  const [lastFetchTime, setLastFetchTime] = useState(0)
   const staleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function load() {
     setLoading(true)
     setStale(false)
+    setFetchError(false)
     if (staleTimerRef.current) clearTimeout(staleTimerRef.current)
 
     try {
       const data = await fetchActiveReports()
       setReports(data)
-      lastFetchRef.current = Date.now()
+      setLastFetchTime(Date.now())
 
       if (data.length === 0) {
-        const condition = await fetchFallbackCondition(MAP_CENTER.lat, MAP_CENTER.lng)
-        setFallbackPin({ lat: MAP_CENTER.lat, lng: MAP_CENTER.lng, condition })
+        const center = userLocation ?? MAP_CENTER
+        const condition = await fetchFallbackCondition(center.lat, center.lng)
+        setFallbackPin({ lat: center.lat, lng: center.lng, condition })
       } else {
         setFallbackPin(null)
       }
     } catch {
-      // keep existing state on error
+      setFetchError(true)
     } finally {
       setLoading(false)
     }
@@ -48,7 +51,7 @@ export default function MapView() {
   }
 
   useEffect(() => {
-    const stored = localStorage.getItem('raincheck_user_location')
+    const stored = localStorage.getItem('baldazo_user_location')
     if (stored) {
       try {
         setUserLocation(JSON.parse(stored))
@@ -77,12 +80,19 @@ export default function MapView() {
         </div>
       )}
 
+      {fetchError && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-lg shadow">
+          Error de conexión. Intentá refrescar.
+        </div>
+      )}
+
       <LeafletMap
         reports={reports}
         fallbackPin={fallbackPin}
         userLocation={userLocation}
         stale={stale}
         loading={loading}
+        lastFetchTime={lastFetchTime}
         onRefresh={load}
       />
     </div>

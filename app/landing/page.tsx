@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'RainCheck — ¿Necesitás capa?',
+  title: 'Hay Baldazo — El mapa de lluvia para motociclistas',
   description: 'El mapa de lluvia para motociclistas. Reportá el clima donde estás y chequeá cómo está la ruta.',
 }
 
@@ -11,12 +11,12 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="flex flex-col items-center justify-center text-center px-6 pt-20 pb-12">
-        <div className="text-6xl mb-6">🏍️🌧️</div>
+        <div className="text-6xl mb-6">🪣🌧️</div>
         <h1 className="text-4xl font-bold text-gray-900 leading-tight max-w-xs">
-          ¿Necesitás capa para salir?
+          ¿Hay baldazo en tu ruta?
         </h1>
         <p className="mt-4 text-lg text-gray-500 max-w-sm">
-          RainCheck es el mapa de lluvia para motociclistas de San José. Lo construimos entre todos.
+          Hay Baldazo es el mapa de lluvia para motociclistas de San José. Lo construimos entre todos.
         </p>
         <Link
           href="/"
@@ -60,7 +60,7 @@ export default function LandingPage() {
           <div className="text-4xl mb-4">⚡</div>
           <h2 className="text-xl font-bold text-gray-800 mb-3">El Waze de la lluvia</h2>
           <p className="text-gray-500 text-sm leading-relaxed">
-            Ninguna app de clima sabe si está lloviendo en tu esquina exacta. Pero un moto que pasó hace 10 minutos sí lo sabe. RainCheck convierte esa información en algo útil para todos.
+            Ninguna app de clima sabe si hay baldazo en tu esquina exacta. Pero un moto que pasó hace 10 minutos sí lo sabe. Hay Baldazo convierte esa información en algo útil para todos.
           </p>
         </div>
       </section>

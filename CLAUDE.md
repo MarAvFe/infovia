@@ -75,12 +75,20 @@ function fuzzLocation(lat, lng, radiusMeters = 300) {
 ```
 
 ### Gate Logic
+
+Gate uses a **timestamp**, not a boolean. Users must re-report after 10 minutes.
+localStorage key: `raincheck_last_report` (stores `Date.now()` as string).
+
 ```javascript
-function hasReported() {
-  return localStorage.getItem('raincheck_reported') === 'true';
+const STALE_MS = 10 * 60 * 1000 // 10 minutes — exported from lib/gate.ts
+
+function hasRecentReport() {
+  const raw = parseInt(localStorage.getItem('raincheck_last_report') || '0', 10);
+  const ts = Number.isFinite(raw) ? raw : 0;
+  return Date.now() - ts < STALE_MS;
 }
 function markReported() {
-  localStorage.setItem('raincheck_reported', 'true');
+  localStorage.setItem('raincheck_last_report', Date.now().toString());
 }
 ```
 

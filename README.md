@@ -1,13 +1,13 @@
-# RainCheck
+# Hay Baldazo 🪣
 
-Crowdsourced weather reporting for motorcyclists. Report your local conditions to unlock the community map.
+Crowdsourced rain reporting for motorcyclists in San José, Costa Rica. Report your local conditions to unlock the community map.
 
 ![map](map.png)
 
 ## How it works
 
 1. **Open the app** → Share your location
-2. **Report** → Select if you need a coat (rain/cloudy/clear)
+2. **Report** → Is it raining where you are right now?
 3. **View** → See all community reports on the map
 4. **No accounts** → Anonymous, no login required
 
@@ -15,7 +15,7 @@ Crowdsourced weather reporting for motorcyclists. Report your local conditions t
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
+- **Frontend:** Next.js, TypeScript, Tailwind CSS
 - **Database:** Supabase (Postgres)
 - **Map:** Leaflet.js + OpenStreetMap
 - **Weather fallback:** Open-Meteo API

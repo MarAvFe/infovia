@@ -48,7 +48,7 @@ export default function SubmitForm({ onSuccess }: Props) {
     if (!coords || submitting) return
     setSubmitting(true)
     setError(null)
-    localStorage.setItem('raincheck_user_location', JSON.stringify(coords))
+    localStorage.setItem('baldazo_user_location', JSON.stringify(coords))
     const fuzzed = fuzzLocation(coords.lat, coords.lng)
     try {
       await submitReport(fuzzed.lat, fuzzed.lng, condition)
