@@ -2,12 +2,16 @@
 
 Crowdsourced weather reporting for motorcyclists. Report your local conditions to unlock the community map.
 
+![map](map.png)
+
 ## How it works
 
 1. **Open the app** → Share your location
 2. **Report** → Select if you need a coat (rain/cloudy/clear)
 3. **View** → See all community reports on the map
 4. **No accounts** → Anonymous, no login required
+
+![your-report](intro-q.png)
 
 ## Tech Stack
 
