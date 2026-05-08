@@ -49,7 +49,7 @@ export default function LeafletMap({ reports, fallbackPin, userLocation }: Props
       <div
         style={{
           position: 'absolute',
-          bottom: 20,
+          bottom: 50,
           left: 20,
           zIndex: 1000,
           backgroundColor: 'white',
