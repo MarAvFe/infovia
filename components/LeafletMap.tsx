@@ -23,19 +23,22 @@ type Props = {
   reports: Report[]
   fallbackPin: FallbackPin | null
   userLocation: { lat: number; lng: number } | null
+  stale: boolean
+  loading: boolean
+  onRefresh: () => void
 }
 
 const DEFAULT_CENTER: [number, number] = [9.9281, -84.0907]
 
 function createEmojiIcon(emoji: string) {
   return L.divIcon({
-    html: `<div style="font-size: 24px; line-height: 1;">${emoji}</div>`,
+    html: `<div style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 2px white) drop-shadow(0 0 2px white);">${emoji}</div>`,
     iconSize: [24, 24],
     className: 'emoji-icon',
   })
 }
 
-export default function LeafletMap({ reports, fallbackPin, userLocation }: Props) {
+export default function LeafletMap({ reports, fallbackPin, userLocation, stale, loading, onRefresh }: Props) {
   const mapCenter: [number, number] = userLocation ? [userLocation.lat, userLocation.lng] : DEFAULT_CENTER
 
   return (
@@ -45,11 +48,38 @@ export default function LeafletMap({ reports, fallbackPin, userLocation }: Props
         attribution="© OpenStreetMap contributors"
       />
 
+      {/* Top-right controls */}
+      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 1000, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {!stale && !loading && (
+          <div style={{ backgroundColor: '#22c55e', color: 'white', fontSize: 12, padding: '2px 8px', borderRadius: 999 }}>
+            En vivo
+          </div>
+        )}
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          style={{
+            backgroundColor: '#2563eb',
+            border: 'none',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            color: 'white',
+            fontSize: 15,
+            fontWeight: 600,
+            padding: '8px 16px',
+            borderRadius: 999,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.5 : 1,
+          }}
+        >
+          ↻ Refrescar
+        </button>
+      </div>
+
       {/* Legend */}
       <div
         style={{
           position: 'absolute',
-          bottom: 50,
+          bottom: 100,
           left: 20,
           zIndex: 1000,
           backgroundColor: 'white',

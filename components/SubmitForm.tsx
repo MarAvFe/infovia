@@ -7,7 +7,7 @@ import { Condition } from '../lib/weathercode'
 
 type Props = { onSuccess: () => void }
 
-type GeoState = 'loading' | 'denied' | 'ready'
+type GeoState = 'loading' | 'denied' | 'blocked' | 'ready'
 
 const CONDITIONS: { condition: Condition; label: string }[] = [
   { condition: 'rain', label: 'Sí, necesito capa' },
@@ -27,21 +27,22 @@ export default function SubmitForm({ onSuccess }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    console.log('Requesting geolocation...')
+  function requestLocation(isRetry = false) {
+    setGeoState('loading')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        console.log('Geolocation success:', pos.coords.latitude, pos.coords.longitude)
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setGeoState('ready')
       },
       (err) => {
         console.log('Geolocation error:', err.code, err.message)
-        setGeoState('denied')
+        setGeoState(isRetry ? 'blocked' : 'denied')
       },
       { timeout: 10000, maximumAge: 0, enableHighAccuracy: true }
     )
-  }, [])
+  }
+
+  useEffect(() => { requestLocation() }, [])
 
   async function handleCondition(condition: Condition) {
     if (!coords || submitting) return
@@ -73,10 +74,31 @@ export default function SubmitForm({ onSuccess }: Props) {
         )}
 
         {geoState === 'denied' && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
             <p className="text-sm text-red-700">
               Esta app funciona si todos aportamos. Necesitamos tu ubicación para registrar tu reporte.
             </p>
+            <button
+              onClick={() => requestLocation(true)}
+              className="w-full py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700"
+            >
+              Permitir ubicación
+            </button>
+          </div>
+        )}
+
+        {geoState === 'blocked' && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+            <p className="text-sm text-red-700 font-medium">Ubicación bloqueada por el navegador</p>
+            <p className="text-sm text-red-600">
+              Para activarla: tocá el ícono 🔒 en la barra de dirección → <strong>Permisos del sitio</strong> → <strong>Ubicación</strong> → Permitir. Luego recargá la página.
+            </p>
+            <button
+              onClick={() => requestLocation(true)}
+              className="w-full py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700"
+            >
+              Intentar de nuevo
+            </button>
           </div>
         )}
 

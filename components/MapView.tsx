@@ -77,25 +77,14 @@ export default function MapView() {
         </div>
       )}
 
-      {!stale && !loading && (
-        <div className="absolute top-4 right-4 z-10 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-          En vivo
-        </div>
-      )}
-
-      {stale && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-white border border-gray-200 shadow-lg px-4 py-3 rounded-xl">
-          <span className="text-sm text-gray-600">Vista desactualizada.</span>
-          <button
-            onClick={load}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800"
-          >
-            Refrescar
-          </button>
-        </div>
-      )}
-
-      <LeafletMap reports={reports} fallbackPin={fallbackPin} userLocation={userLocation} />
+      <LeafletMap
+        reports={reports}
+        fallbackPin={fallbackPin}
+        userLocation={userLocation}
+        stale={stale}
+        loading={loading}
+        onRefresh={load}
+      />
     </div>
   )
 }
