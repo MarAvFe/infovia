@@ -67,7 +67,7 @@ export default function MapView() {
   }, [])
 
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative w-full" style={{ height: '100svh' }}>
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
           <p className="text-gray-500">Cargando reportes...</p>

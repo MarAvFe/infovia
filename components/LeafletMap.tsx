@@ -155,12 +155,12 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
         </button>
       </div>
 
-      {/* Info button — bottom right (was Share) */}
+      {/* Info button — bottom right, lower edge level with the legend's lower edge */}
       <button
         onClick={() => setShowHelp(true)}
         style={{
           position: 'absolute',
-          bottom: 40,
+          bottom: 100,
           right: 16,
           zIndex: 1000,
           backgroundColor: '#2563eb',

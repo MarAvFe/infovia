@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Fix: on mobile, the map used `100vh`, which reserves space for the browser's collapsed nav bar — but since the map captures all scroll/touch gestures, the nav bar could never collapse, permanently hiding anything anchored near the bottom (including the Info button). Switched to `100svh` (small viewport height) so the layout always matches what's actually visible.
+- Fix: Info button's lower edge now aligns with the legend's lower edge.
+
 ## 0.2.1
 
 - Fix: Info button was invisible at the bottom-left — moved to bottom-right (former Share spot) with blue contrast like the Refrescar button.
