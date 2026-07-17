@@ -18,4 +18,15 @@
 
 ## 0.1.0
 
-Everything before 0.2.0 — initial MVP: map with Open-Meteo fallback, geolocation + GPS fuzzing, report submission, contribute-to-read gate, community reports layer, share button, refresh/staleness indicator, legend, rebrand to Baldazo, landing page.
+Initial MVP — everything before 0.2.0.
+
+- Map with Open-Meteo fallback: shows a weather-API pin when there are no recent community reports nearby.
+- Geolocation + GPS fuzzing: asks for the user's location and randomizes it before it ever reaches the server.
+- Report submission: lets a user submit "¿necesita capa?" (needs coat / cloudy / clear) tied to their fuzzed location.
+- Contribute-to-read gate: hides the map behind the report form until the user has submitted a recent report.
+- Community reports layer: renders other users' reports as colored, emoji-labeled pins on the map.
+- Share button: copies or native-shares the app link so users can invite others.
+- Refresh / staleness indicator: shows "En vivo" plus a manual refresh button, and flags when data is stale.
+- Legend: explains the pin colors and icons on the map.
+- Rebrand to Baldazo: renamed the app and its assets from the original working name.
+- Landing page: a standalone marketing page introducing the app before the map/report flow.
