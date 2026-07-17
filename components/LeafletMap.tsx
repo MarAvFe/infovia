@@ -2,6 +2,7 @@
 
 import 'leaflet/dist/leaflet.css'
 import { Fragment, useState, useEffect, FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { Report, Condition, submitFeedback } from '../lib/reports'
@@ -154,43 +155,18 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
         </button>
       </div>
 
-      {/* Share button — bottom right */}
-      <button
-        onClick={handleShare}
-        style={{
-          position: 'absolute',
-          bottom: 40,
-          right: 16,
-          zIndex: 1000,
-          backgroundColor: 'white',
-          border: 'none',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-          color: '#1d4ed8',
-          fontSize: 13,
-          fontWeight: 600,
-          padding: '8px 14px',
-          borderRadius: 999,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        {copied ? '✓ Copiado' : '↑ Compartir'}
-      </button>
-
-      {/* Info button — bottom left, above legend area */}
+      {/* Info button — bottom right (was Share) */}
       <button
         onClick={() => setShowHelp(true)}
         style={{
           position: 'absolute',
           bottom: 40,
-          left: 16,
+          right: 16,
           zIndex: 1000,
-          backgroundColor: 'white',
+          backgroundColor: '#2563eb',
           border: 'none',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-          color: '#374151',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          color: 'white',
           fontSize: 13,
           fontWeight: 600,
           padding: '8px 14px',
@@ -201,16 +177,18 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
         ℹ️ Info
       </button>
 
-      {showHelp && (
+      {showHelp && createPortal(
         <div
           style={{
-            position: 'absolute',
+            position: 'fixed',
             inset: 0,
             zIndex: 2000,
             backgroundColor: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
           }}
           onClick={() => setShowHelp(false)}
         >
@@ -222,10 +200,12 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
               padding: '20px 20px 28px',
               maxWidth: 480,
               width: '100%',
-              maxHeight: '80vh',
+              maxHeight: '65vh',
               overflowY: 'auto',
+              overscrollBehavior: 'contain',
               boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
               boxSizing: 'border-box',
+              marginTop: 'auto',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -259,38 +239,64 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
                 <div>Baldazo es gratuito y no tiene anuncios. Funciona porque la comunidad reporta.</div>
               </div>
               <div>
-                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>📍 Ubicación difuminada</div>
-                <div>Tu ubicación exacta nunca sale de tu teléfono: se difumina antes de enviarse, así que el pin que ven los demás no es tu punto exacto.</div>
-              </div>
-              <div>
                 <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>⏱️ Reportes recientes</div>
                 <div>Los reportes se muestran en el mapa por 45 minutos y luego desaparecen de la vista en vivo.</div>
               </div>
-              <div>
-                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>🔄 Reportá cada 10 minutos</div>
-                <div>Para mantener el mapa actualizado, te pedimos un nuevo reporte cada 10 minutos.</div>
-              </div>
             </div>
 
-            {!installed && (
+            <button
+              onClick={handleShare}
+              style={{
+                marginTop: 18,
+                width: '100%',
+                backgroundColor: 'white',
+                border: '1px solid #d1d5db',
+                color: '#1d4ed8',
+                fontSize: 14,
+                fontWeight: 600,
+                padding: '12px 16px',
+                borderRadius: 999,
+                cursor: 'pointer',
+              }}
+            >
+              {copied ? '✓ Copiado' : '↑ Compartir Baldazo'}
+            </button>
+
+            {!installed && installPrompt && (
               <button
                 onClick={handleInstall}
-                disabled={!installPrompt}
                 style={{
                   marginTop: 18,
                   width: '100%',
-                  backgroundColor: installPrompt ? '#2563eb' : '#e5e7eb',
-                  color: installPrompt ? 'white' : '#9ca3af',
+                  backgroundColor: '#2563eb',
+                  color: 'white',
                   border: 'none',
                   fontSize: 14,
                   fontWeight: 600,
                   padding: '12px 16px',
                   borderRadius: 999,
-                  cursor: installPrompt ? 'pointer' : 'default',
+                  cursor: 'pointer',
                 }}
               >
-                {installPrompt ? '📲 Instalar en mi teléfono' : '📲 Usá "Agregar a inicio" desde el menú del navegador'}
+                📲 Instalar en mi teléfono
               </button>
+            )}
+            {!installed && !installPrompt && (
+              <div
+                style={{
+                  marginTop: 18,
+                  width: '100%',
+                  backgroundColor: '#eff6ff',
+                  color: '#1d4ed8',
+                  fontSize: 13,
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  boxSizing: 'border-box',
+                  textAlign: 'center',
+                }}
+              >
+                📲 Instalá la app desde el menú de tu navegador: buscá &quot;Agregar a inicio&quot; o &quot;Instalar app&quot;.
+              </div>
             )}
             {installed && (
               <div style={{ marginTop: 18, textAlign: 'center', fontSize: 13, color: '#16a34a', fontWeight: 600 }}>
@@ -320,7 +326,7 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
 
               {showContactForm && (
                 <form onSubmit={handleContactSubmit}>
-                  <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, color: '#111827', marginBottom: 8 }}>
                     Contanos qué pasó o qué podríamos mejorar.
                   </div>
                   <textarea
@@ -334,6 +340,7 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
                       borderRadius: 8,
                       padding: 8,
                       fontSize: 14,
+                      color: '#111827',
                       resize: 'none',
                       boxSizing: 'border-box',
                       marginBottom: 8,
@@ -390,7 +397,8 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Legend */}
