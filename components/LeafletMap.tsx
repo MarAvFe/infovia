@@ -1,10 +1,10 @@
 'use client'
 
 import 'leaflet/dist/leaflet.css'
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, FormEvent } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
-import { Report, Condition } from '../lib/reports'
+import { Report, Condition, submitFeedback } from '../lib/reports'
 
 const PIN_COLORS: Record<Condition, string> = {
   rain: '#3B82F6',
@@ -16,6 +16,11 @@ const EMOJIS: Record<Condition, string> = {
   rain: '🌧️',
   cloudy: '☁️',
   clear: '☀️',
+}
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
 type FallbackPin = { lat: number; lng: number; condition: Condition }
@@ -45,6 +50,12 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
 
   const [minutesSince, setMinutesSince] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [installed, setInstalled] = useState(false)
+  const [showContactForm, setShowContactForm] = useState(false)
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   useEffect(() => {
     if (!lastFetchTime) return
@@ -53,6 +64,41 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
     const id = setInterval(update, 30000)
     return () => clearInterval(id)
   }, [lastFetchTime])
+
+  useEffect(() => {
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault()
+      setInstallPrompt(e as BeforeInstallPromptEvent)
+    }
+    const onInstalled = () => setInstalled(true)
+    window.addEventListener('beforeinstallprompt', onBeforeInstall)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
+  async function handleInstall() {
+    if (!installPrompt) return
+    await installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') setInstalled(true)
+    setInstallPrompt(null)
+  }
+
+  async function handleContactSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!contactMessage.trim()) return
+    setContactStatus('sending')
+    try {
+      await submitFeedback(contactMessage.trim())
+      setContactStatus('sent')
+      setContactMessage('')
+    } catch {
+      setContactStatus('error')
+    }
+  }
 
   async function handleShare() {
     const url = window.location.href
@@ -133,6 +179,220 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
         {copied ? '✓ Copiado' : '↑ Compartir'}
       </button>
 
+      {/* Info button — bottom left, above legend area */}
+      <button
+        onClick={() => setShowHelp(true)}
+        style={{
+          position: 'absolute',
+          bottom: 40,
+          left: 16,
+          zIndex: 1000,
+          backgroundColor: 'white',
+          border: 'none',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          color: '#374151',
+          fontSize: 13,
+          fontWeight: 600,
+          padding: '8px 14px',
+          borderRadius: 999,
+          cursor: 'pointer',
+        }}
+      >
+        ℹ️ Info
+      </button>
+
+      {showHelp && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 2000,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px 16px 0 0',
+              padding: '20px 20px 28px',
+              maxWidth: 480,
+              width: '100%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 17, color: '#1f2937' }}>
+                Acerca de Baldazo
+              </div>
+              <button
+                onClick={() => setShowHelp(false)}
+                aria-label="Cerrar"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 20,
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                  padding: 4,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 14, color: '#374151' }}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>🔒 Es anónimo</div>
+                <div>Guardamos tu ubicación aproximada, no tu nombre ni ningún dato personal. Nadie puede identificarte a partir de un reporte.</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>💸 Es gratis</div>
+                <div>Baldazo es gratuito y no tiene anuncios. Funciona porque la comunidad reporta.</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>📍 Ubicación difuminada</div>
+                <div>Tu ubicación exacta nunca sale de tu teléfono: se difumina antes de enviarse, así que el pin que ven los demás no es tu punto exacto.</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>⏱️ Reportes recientes</div>
+                <div>Los reportes se muestran en el mapa por 45 minutos y luego desaparecen de la vista en vivo.</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2, color: '#1f2937' }}>🔄 Reportá cada 10 minutos</div>
+                <div>Para mantener el mapa actualizado, te pedimos un nuevo reporte cada 10 minutos.</div>
+              </div>
+            </div>
+
+            {!installed && (
+              <button
+                onClick={handleInstall}
+                disabled={!installPrompt}
+                style={{
+                  marginTop: 18,
+                  width: '100%',
+                  backgroundColor: installPrompt ? '#2563eb' : '#e5e7eb',
+                  color: installPrompt ? 'white' : '#9ca3af',
+                  border: 'none',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  padding: '12px 16px',
+                  borderRadius: 999,
+                  cursor: installPrompt ? 'pointer' : 'default',
+                }}
+              >
+                {installPrompt ? '📲 Instalar en mi teléfono' : '📲 Usá "Agregar a inicio" desde el menú del navegador'}
+              </button>
+            )}
+            {installed && (
+              <div style={{ marginTop: 18, textAlign: 'center', fontSize: 13, color: '#16a34a', fontWeight: 600 }}>
+                ✓ Ya instalada
+              </div>
+            )}
+
+            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid #e5e7eb' }}>
+              {!showContactForm && (
+                <button
+                  onClick={() => setShowContactForm(true)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    color: '#374151',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    padding: '12px 16px',
+                    borderRadius: 999,
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✉️ Contactanos
+                </button>
+              )}
+
+              {showContactForm && (
+                <form onSubmit={handleContactSubmit}>
+                  <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+                    Contanos qué pasó o qué podríamos mejorar.
+                  </div>
+                  <textarea
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    placeholder="Escribí tu mensaje aquí..."
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 8,
+                      padding: 8,
+                      fontSize: 14,
+                      resize: 'none',
+                      boxSizing: 'border-box',
+                      marginBottom: 8,
+                    }}
+                    disabled={contactStatus === 'sending' || contactStatus === 'sent'}
+                  />
+                  {contactStatus === 'error' && (
+                    <p style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>
+                      No se pudo enviar. Intentá de nuevo.
+                    </p>
+                  )}
+                  {contactStatus === 'sent' && (
+                    <p style={{ color: '#16a34a', fontSize: 12, marginBottom: 8 }}>
+                      ¡Gracias! Recibimos tu mensaje.
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowContactForm(false)
+                        setContactStatus('idle')
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#6b7280',
+                        fontSize: 13,
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cerrar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={contactStatus === 'sending' || contactStatus === 'sent' || !contactMessage.trim()}
+                      style={{
+                        backgroundColor: '#2563eb',
+                        border: 'none',
+                        color: 'white',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '8px 14px',
+                        borderRadius: 999,
+                        cursor: contactStatus === 'sending' ? 'not-allowed' : 'pointer',
+                        opacity: contactStatus === 'sending' || contactStatus === 'sent' || !contactMessage.trim() ? 0.5 : 1,
+                      }}
+                    >
+                      {contactStatus === 'sending' ? 'Enviando...' : 'Enviar'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Legend */}
       <div
         style={{
@@ -164,10 +424,10 @@ export default function LeafletMap({ reports, fallbackPin, userLocation, stale, 
               center={[r.lat, r.lng]}
               radius={40}
               pathOptions={{ fillColor: PIN_COLORS[r.condition], fillOpacity: 0.8, stroke: false }}
-            >
-              <Tooltip>{time}</Tooltip>
-            </CircleMarker>
-            <Marker position={[r.lat, r.lng]} icon={createEmojiIcon(EMOJIS[r.condition])} />
+            />
+            <Marker position={[r.lat, r.lng]} icon={createEmojiIcon(EMOJIS[r.condition])}>
+              <Popup>{time}</Popup>
+            </Marker>
           </Fragment>
         )
       })}

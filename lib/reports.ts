@@ -26,3 +26,8 @@ export async function submitReport(lat: number, lng: number, condition: Conditio
   const { error } = await supabase.from('reports').insert({ lat, lng, condition })
   if (error) throw error
 }
+
+export async function submitFeedback(message: string): Promise<void> {
+  const { error } = await supabase.from('feedback').insert({ message })
+  if (error) throw error
+}
